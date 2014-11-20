@@ -1,0 +1,30 @@
+Eval:
+-----
+
+	Eval is a toy programming language built to see how simply an evaluation graph based functional language can be built. The core idea is that there should be a generic node type which can either be a function, a primitive operation, a variable or a literal. Functions will be then composed of a tree of other functions,
+
+add 2 add 3 4 = add
+	        / \
+	       2  add
+		  / \
+		 3   4
+
+we read the add token, find that its a two-sided operator and evaluate its left
+	we read the left, which is the literal 2
+	we read the right, find that it is a two-sided operator and evaluate its left
+		we read the left, which is the literal 3
+		we read the right, which is the literal 4
+		we apply the operator between left[3] and right[4] and return 7
+	we apply the operator between left[2] and right[7] and return 9
+ 
+More generically:
+function eval:
+	token = readT()
+	switch(matchT(token))
+		case LITERAL:
+			return litval(token)
+		case LEFT_ONLY:
+			return leftop(token)(eval())
+		case LEFT_RIGHT:
+	 	 	return leftrightop(token)(eval(), eval())
+
