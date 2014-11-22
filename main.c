@@ -4,7 +4,19 @@ typedef literal (*lr_op)(literal left, literal right);
 typedef token char*;
 
 token readT() {} //fuck i dunno
-
+treeCollection buildTrees(char* source) {} //set up trees for evaluatin' later on down the road.
+treeNode buildTree(char* source) {
+	//Read a token
+	//Determine what type it is
+		//Literal, build and return a literal node
+		//Symbol, build and return a symbol node
+		//Operation, 
+			//create an operation node with the given operation type
+			//build a tree, plug it into the left side of the node
+			//build a tree, plug it into the right side of the node
+			//return the operation node
+}
+		
 literal eval(token instance) {
 
 	lo_op left_function;
