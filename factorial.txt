@@ -1,0 +1,38 @@
+//We create stopping edge cases by early-solving operations. That is, given the expression mult 0 do_stuff x y, mult will evaluate itself to 0 when it encounters //the first 0 term as anything multiplied by zero is zero and therefore do_stuff is never evaluated.
+//fact n = (!(n==0) * (n * fact (n - 1))) + ((n==0) * 1)
+fact n = add mult not eq n 0 mult n fact sub n 1 mult eq n 0 1 
+
+fact 3 = add mult not eq 3 0 mult 3 fact sub 3 1 mult eq 3 0 1
+fact 3 = add mult not 0 mult 3 fact sub 3 1 mult eq 3 0 1
+fact 3 = add mult 1 mult 3 fact sub 3 1 mult eq 3 0 1
+fact 3 = add mult 1 mult 3 fact 2 mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult not eq 2 0 mult 2 fact sub 2 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult not 0 mult 2 fact sub 2 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 fact sub 2 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 fact 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult not eq 1 0 mult 1 fact sub 1 1 mult eq 1 0 1  mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult not 0 mult 1 fact sub 1 1 mult eq 1 0 1  mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 fact sub 1 1 mult eq 1 0 1  mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 fact 0 mult eq 1 0 1  mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 add mult not eq 0 0 mult 0 fact sub 0 1 mult eq 0 0 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 add mult not 1 mult 0 fact sub 0 1 mult eq 0 0 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 add mult 0 mult 0 fact sub 0 1 mult eq 0 0 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 add 0 mult eq 0 0 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 add 0 mult 1 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 add 0 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 mult 1 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add mult 1 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add 1 mult eq 1 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add 1 mult 0 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 add 1 0 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 mult 2 1 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add mult 1 2 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add 2 mult eq 2 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add 2 mult 0 1  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 add 2 0  mult eq 3 0 1
+fact 3 = add mult 1 mult 3 2 mult eq 3 0 1
+fact 3 = add mult 1 6 mult eq 3 0 1
+fact 3 = add 6 mult eq 3 0 1
+fact 3 = add 6 mult 0 1
+fact 3 = add 6 0
+fact 3 = 6
