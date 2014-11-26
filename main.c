@@ -1,53 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <memory.h>
-
-typedef literal int;
-typedef token char*;
-
-typedef enum node_type {
-	LITERAL,
-	REFERENCE,
-	BINDING,
-	OPERATION
-} node_type;
-
-//Data common to all eval tree nodes
-typedef struct eval_node {
-
-//Common to all node types
-	node_type type;
-
-//Specific to literals
-	literal value;
-
-//For a reference node, this is the name of the target binding
-//For a binding node, this is the bound name
-//For an operation, this is the name to look up in the operation function table.
-	token name;
-
-//First child node:
-// 	The first input node to an operation
-// 	The bound node when node is a binding
-//	The first assigned child tree when node is a reference
-//Second child node:
-//	The second input node to a binary operation
-//	The second assigned child tree when node is a reference
-//Ensuing child nodes:
-//	Any remaining child trees when node is a reference
-	eval_node* child_nodes[];
-
-//For operations, this can only be 1 or 2
-//For functions, this specifies how many input bindings
-//are taken by the function and can be arbitrary
-	literal input_count;
-
-//Specific to function bindings
-	token input_bindings[]; //The names of each input variable
-
-} eval_node;
-
-typedef literal (*operator_call)(literal left, literal right);
+#include "eval.h"
 
 const cmd_count = 10;
 
@@ -185,6 +139,8 @@ eval_node* buildNode(token startToken, FILE* sourceFile) { //We pass startToken 
 	if(isLiteral(tNext)) {
 		//newLiteral parses the input token into a literal value,
 		//then mallocs and inits a new literal node and gives it that value
+		//Important to note that literals are always leaves and tree building
+		//will always terminate here.
 		return newLiteral(tNext);
 	}
 
@@ -210,22 +166,23 @@ eval_node* buildNode(token startToken, FILE* sourceFile) { //We pass startToken 
 
 	}
 
-	if(isBound(tNext)) {
-
+	//Change this so that it just checks to see if it's not an operation or a literal so that we can do
+	//binding in any order and then only worry about resolving references to bindings on evaluation
+	//Because right now, you'll have to define things in order. Which to my taste might be better, really.
+	//NOTE: As I started filling this out, it became apparent that we're going to have to know how many
+	//arguments the reference takes in order to properly build the tree below it, and as such
+	if(isBound(tNext) || inScope(tNext)) { //This works for either because references will be able to be references to local or global bindings.
+		return newReference(tNext); //Does what it says on the tin. Critically, it names the referenced binding,
+																//then looks up the binding in the current forest and gets its count of arguments
+																//and uses this to build a node for each required entry
 	}
 
-	//Determine what type it is
-		//Literal, build and return a literal node
-		//Operation,
-			//create an operation node with the given operation type
-			//build a tree, plug it into the left side of the node
-			//build a tree, plug it into the right side of the node
-			//return the operation node
-		//Something already bound at the top of the trees collection
-			//Build a reference node (obviously, do not evaluate it but do look up the referenced binding to see how many parameters to skip) !!THIS ONE IS REAL TRICKY FOR FUNCTIONS!!
-		//Something bound in a parent binding (go up the current tree and look at all of the input_bindings[]. If not matched, repeat process) (this should only happen once if we're building)
-			//Create a binding node (remember that we're not evaluating yet, just building)
-		//Unmatched, syntax error, fail
+	//This is my first instance of the error printer, so I want to note
+	//that I want this to be able to take a string argument to shoehorn
+	//into the message, for pretty obvious reasons.
+	error("Unbound reference '%s'", tNext);
+	return (eval_node*)0; //We pass a null node pointer back up the build
+												//chain to indicate an erroneous halt condition
 
 }
 
@@ -234,6 +191,24 @@ literal collapseTree(eval_node* root) {
 	//First, dupe the provided tree
 
 }
+
+//NOTE: This might need to be rethought, because using this method of
+//evaluating the left and right of an operation node and then feeding
+//those values into a function precludes early solving, which is kind
+//of one of the main tenets of this language, since, as mentioned,
+//we're evaluating both sides before applying the operation when we
+//should evaluate the left side and then return an early value if the
+//left value causes such a condition. (e.g.: mult 0 x -> 0 every time)
+literal op_add(litaral left, literal right) { return left + right; }
+literal op_sub(litaral left, literal right) { return left - right; }
+literal op_mult(litaral left, literal right) { return left * right; }
+literal op_div(litaral left, literal right) { return left / right; }
+literal op_eq(litaral left, literal right) { return left == right ? 1 : 0; }
+literal op_gt(litaral left, literal right) { return left > right ? 1 : 0; }
+literal op_lt(litaral left, literal right) { return left < right ? 1 : 0; }
+literal op_not(litaral left, literal right) { return left == 0 ? 1 : 0; }
+literal op_and(litaral left, literal right) { return left & right; }
+literal op_or(litaral left, literal right) { return left | right; }
 
 int main(int argc, char* argv[]) {
 
