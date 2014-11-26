@@ -3,8 +3,6 @@
 #include <memory.h>
 
 typedef literal int;
-typedef literal (*lo_op)(literal input);
-typedef literal (*lr_op)(literal left, literal right);
 typedef token char*;
 
 typedef enum node_type {
@@ -49,11 +47,55 @@ typedef struct eval_node {
 
 } eval_node;
 
+typedef literal (*operator_call)(literal left, literal right);
+
+const cmd_count = 10;
+
+//Need to make a header so that we can declare these functions
+//prior to adding their addresses to the call table
+const operator_call op_calls[] = {
+	&op_add,
+	&op_sub,
+	&op_mult,
+	&op_div,
+	&op_eq,
+	&op_gt,
+	&op_lt,
+	&op_not,
+	&op_and,
+	&op_or
+}
+
+const char* op_names[] = {
+	"add",
+	"sub",
+	"mult",
+	"div",
+	"eq",
+	"gt",
+	"lt",
+	"not",
+	"and",
+	"or"
+}
+
+const int op_inputs[] = {
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	1,
+	2,
+	2
+}
+
 eval_node* boundForest[];
 int forestSize = 0;
 
 token readT(FILE* sourceFile) {} //fuck i dunno
-treeCollection buildTrees(char* source) {} //set up trees for evaluatin' later on down the road.
 
 //Process the equation given in the file handle and retrieve the
 //calculated value in retVal
