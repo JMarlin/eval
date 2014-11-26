@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <string.h>
+#include <memory.h>
+
 typedef literal int;
 typedef literal (*lo_op)(literal input);
 typedef literal (*lr_op)(literal left, literal right);
@@ -24,8 +28,6 @@ typedef struct eval_node {
 //For an operation, this is the name to look up in the operation function table.
 	token name;
 
-//Specific to references, a
-
 //First child node:
 // 	The first input node to an operation
 // 	The bound node when node is a binding
@@ -42,33 +44,134 @@ typedef struct eval_node {
 //are taken by the function and can be arbitrary
 	literal input_count;
 
-//Specific to operations
-	eval_node* right_node; //Not used by unary operations
-
 //Specific to function bindings
 	token input_bindings[]; //The names of each input variable
 
-
 } eval_node;
 
-token readT() {} //fuck i dunno
+eval_node* boundForest[];
+int forestSize = 0;
+
+token readT(FILE* sourceFile) {} //fuck i dunno
 treeCollection buildTrees(char* source) {} //set up trees for evaluatin' later on down the road.
 
-int parse(char* source) {
-	//Read a token
-	//Any literal, bound reference or anything else concrete:
-			//Build an anonymous tree starting at the token just read
-			//Collapse that tree
-	//Any unbound token:
-		//Read next token
-			//Literal, operation or already bound symbol: Syntax error, fail
-			//Unbound symbol: increase the input_count on the node-in-progress and add the token to the input_bindings[], return to read next token
-			//"=": Break read token loop
-		//Build a tree, plug it into the bound_node and return the binding node
+//Process the equation given in the file handle and retrieve the
+//calculated value in retVal
+int parse(FILE* sourceFile, literal* retVal) {
+
+	eval_node* newTree;
+	token tNext
+
+	while(1) {
+
+		tNext = readT(sourceFile);
+		if(!tNext)
+				return 0;
+
+		if(!(isLiteral(tNext) || isOperation(tNext) || isBound(tNext))) { //We'll let the tree builder take care of the invalid token case. Also, isBound will be for global binds, inScope will be for binds in the tree.
+
+				//Make us a new bound tree
+				newTree = (eval_node*)malloc(sizeof(eval_node));
+				newTree->type = BINDING;
+
+				//Copy the token into the new node's name
+				newTree->name = (token)malloc(sizeof(unsigned char)*(strlen(tNext) + 1));
+				strcpy(newTree->name, tNext);
+
+				//Read the ensuing tokens until we error or read a "=" and get the list of tokens and their count
+				newTree->input_bindings = collectParams(sourceFile, &(newTree->input_count)); //Collect params will do the check and error on file termination or invalid token prior to "="
+				//Clean up and fail out if collectParams encountered an error
+				if(!newTree->input_bindings) {
+					free(newTree->name);
+					free(newTree);
+					return 0;
+				}
+
+				//Make room for a single child node entry (the top of the tree we're binding to)
+				//and build a tree into it from the ensuing tokens
+				//Clean up and fail out if building the tree fails
+				newTree->child_nodes = (eval_node**)malloc(sizeof(eval_node*));
+				newTree->child_nodes[0] = buildTree((token)0, sourceFile);
+				if(!newTree->child_nodes[0]) {
+					free(newTree->child_nodes);
+					free(newTree->name);
+					free(newTree);
+					return 0;
+				}
+
+				//Our binding node is finished, insert it into the forest
+				//Keep it secret
+				//Keep it safe
+				boundForest = (eval_node**)realloc(boundForest, sizeof(eval_node*)*(forestSize+1));
+				if(!boundForest) {
+					freeChildren(newTree->child_nodes); //Should replace all of this shit with freeTree
+					free(newTree->child_nodes);
+					free(newTree->name);
+					free(newTree);
+					return 0;
+				}
+				boundForest[forestSize++] = newTree;
+
+		} else {
+
+			//Build and evaluate the anonymous tree
+			newTree = buildNode(tNext, FILE* source);
+			if(!newTree)
+				return 0;
+			*retVal = collapseTree(newTree); //We never have to worry about collapseTree failing because we're guaranteed a valid tree after building it
+			return 1;
+
+		}
+	}
 }
 
-treeNode buildTree(char* source) {
-	//Read a token
+//NOTE: buildTree just builds the logical tree as presented and does not give a single shit about
+//whether the tokens following the end of the logical equation are valid. We will deal with that
+//in the calling function.
+eval_node* buildNode(token startToken, FILE* sourceFile) { //We pass startToken in case we have a calling function which needs to read the first token in a line before deciding to build a tree
+
+	token tNext;
+	eval_node thisNode;
+
+	//Read the next token
+	//Make sure we read the startToken first if passed
+	if(startToken)
+		tNext = startToken;
+	else
+		tNext = readT(sourceFile);
+
+	if(isLiteral(tNext)) {
+		//newLiteral parses the input token into a literal value,
+		//then mallocs and inits a new literal node and gives it that value
+		return newLiteral(tNext);
+	}
+
+	if(isOperation(tNext)) {
+		//newOperation works the same way as newLiteral, but it not only sets the
+		//name based on the operation but also allocates pointers in the inputs
+		//array based on the number of args that operation takes and stores that
+		//count as well
+		thisNode = newOperation(tNext);
+
+		//Op is guaranteed to at least have a right side
+		thisNode->inputs[0] = buildNode((token)0, sourceFile);
+		if(!thisNode->inputs[0])
+			return (eval_node)0; //Should also call freeTree
+
+		if(thisNode->input_count == 2) {
+			thisNode->inputs[1] = buildNode((token)0, sourceFile);
+			if(!thisNode->inputs[1])
+				return (eval_node)0; //Should also call freeTree
+		}
+
+		return thisNode;
+
+	}
+
+	if(isBound(tNext)) {
+
+	}
+
 	//Determine what type it is
 		//Literal, build and return a literal node
 		//Operation,
